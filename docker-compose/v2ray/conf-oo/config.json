@@ -1,0 +1,67 @@
+
+{  
+  "reverse":{  //这是 B 的反向代理设置，必须有下面的 portals 对象
+    "portals":[  
+      {  
+        "tag":"portal",
+        "domain":"private.cloud.com"        // 必须和上面 A 设定的域名一样
+      }
+    ]
+  },
+  "inbounds": [
+    {  
+      // 接受 C 的inbound
+      "tag":"external", // 标签，路由中用到
+      "port":80,
+      // 开放 80 端口，用于接收外部的 HTTP 访问 
+      "protocol":"dokodemo-door",
+        "settings":{  
+          "address":"127.0.0.1",
+          "port":80, //假设 NAS 监听的端口为 80
+          "network":"tcp"
+        }
+    },
+    // 另一个 inbound，接受 A 主动发起的请求  
+    {  
+      "tag": "tunnel",// 标签，路由中用到
+      "port":10000,
+      "protocol":"vmess",
+      "settings":{  
+        "clients":[  
+          {  
+            "id":"set your id",
+            "alterId":64
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/ray"
+        }
+      }
+    }
+  ],
+  "routing":{  
+    "rules":[  
+      {  //路由规则，接收 C 请求后发给 A
+        "type":"field",
+        "inboundTag":[  
+          "external"
+        ],
+        "outboundTag":"portal"
+      },
+      {  //路由规则，让 B 能够识别这是 A 主动发起的反向代理连接
+        "type":"field",
+        "inboundTag":[  
+          "tunnel"
+        ],
+        "domain":[  
+          "full:private.cloud.com"
+        ],
+        "outboundTag":"portal"
+      }
+    ]
+  }
+}
+

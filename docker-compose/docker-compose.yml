@@ -1,1 +1,100 @@
+version: "3"
+services:
+  notebook:
+    image: continuumio/anaconda3
+    restart: always
+    volumes:
+      - ./notebook/mnt:/mnt
+      - notebookconf:/root/.jupyter
+    command: su root -c 'jupyter notebook'
+    networks:
+      - default
 
+  v2ray:
+    image: v2ray/official
+    volumes:
+      - ./v2ray/conf:/etc/v2ray/
+    networks:
+      - default
+    container_name: v2ray
+    restart: always
+    command: "v2ray -config=/etc/v2ray/config.json"
+  
+  v2ray-oo:
+    image: v2ray/official
+    volumes:
+      - ./v2ray/conf-oo:/etc/v2ray/
+    command: "v2ray -config=/etc/v2ray/config.json"
+    restart: always
+    networks:
+      - default
+
+
+  wordpress:
+    image: wordpress
+    volumes:
+      - ./wordpress/wordpress_html:/var/www/html
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    depends_on:
+      - v2ray
+    environment:
+      WORDPRESS_DB_HOST: 172.17.0.1:3306
+      WORDPRESS_DB_PASSWORD: setyourpassword
+    networks:
+      - default
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx/nginx-conf/conf.d:/etc/nginx/conf.d
+      - ./nginx/nginx-conf/logs:/var/log/nginx
+      - ./nginx/nginx-conf/ssl:/ssl
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - default
+
+  nextcloud:
+    image: nextcloud
+    volumes:
+      - ./nextcloud/config:/var/www/html/config
+      - ./nextcloud/apps:/var/www/html/apps
+      - ./nextcloud/data:/var/www/html/data
+    environment:
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: root
+      MYSQL_HOST: 172.17.0.1:3306
+      MYSQL_PASSWORD: setyourpassword
+      NEXTCLOUD_TRUSTED_DOMAINS: deepdown.fun
+      UID: 1000
+      GID: 1000
+      UPLOAD_MAX_SIZE: 5G
+      APC_SHM_SIZE: 128M
+      OPCACHE_MEM_SIZE: 128
+      CRON_PERIOD: 15m
+    restart: always
+    networks:
+      - default
+
+  redis-cache:
+    image: redis
+    restart: always
+    networks:
+      - default 
+
+volumes:
+  notebookconf:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /root/docker-compose/notebook/conf
+  
+networks:
+  default:
+    ipam:
+      config:
+         - subnet: 172.22.0.0/16

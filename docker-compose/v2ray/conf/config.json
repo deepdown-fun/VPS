@@ -1,0 +1,49 @@
+{
+	"inbounds": [{
+		"port": 1080,
+		"protocol": "http",
+                "listen": "0.0.0.0",
+		"sniffing": {
+			"enabled": true,
+			"destOverride": ["http", "tls"]
+		},
+		"settings": {
+			"allowTransparent": false,
+			"userLevel": 0
+		}
+	}],
+	"outbounds": [{
+		"protocol": "freedom",
+		"settings": {}
+	}, {
+		"protocol": "vmess",
+		"settings": {
+			"vnext": [{
+				"address": "your remote address",
+				"port": 443,
+				"users": [{
+					"id": "your remote vmess id",
+					"alterId": 2
+				}]
+			}]
+		},
+		"tag": "direct",
+		"streamSettings": {
+			"network": "tcp",
+			"security": "tls",
+			"tcpSettings": {},
+			"tlsSettings": {
+				"serverName": ""
+			}
+		}
+	}],
+	"routing": {
+		"domainStrategy": "IPOnDemand",
+		"rules": [{
+			"type": "field",
+			"outboundTag": "direct",
+			"domain": ["domain:github.com", "domain:wordpress.org", "domain:cip.cc","domain:pythonhosted.org","domain:nextcloud.com","domain:haxx.se","domain:onlyoffice.com"]
+		}]
+	}
+}
+
